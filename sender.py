@@ -389,7 +389,8 @@ class Sender:
         else: 
             print("send packet without pld")
             self.send(packet)
-            self.update_log("snd", self.get_packet_type(packet), packet)
+            if not retransmit:
+                self.update_log("snd", self.get_packet_type(packet), packet)
             return 1
     
     def delay_send(self, packet):
