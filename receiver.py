@@ -203,6 +203,7 @@ class Receiver:
 						self.update_log("rcv", self.get_packet_type(packet), packet)
 						# out of order packet
 						if sent_dup_ack == 0:
+							send_time = packet.send_time
 							ack = STPPacket(b'',self.seq_no, self.ack_no, send_time=send_time, ack=True)
 							self.send(ack, addr)
 							self.update_log("snd", self.get_packet_type(ack),ack)

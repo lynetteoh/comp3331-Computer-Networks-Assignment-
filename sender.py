@@ -333,8 +333,6 @@ class Sender:
             self.seq_no = packet.seq_no + len(payload)
             print("next seq_no is", self.seq_no)
        
-        # a=random.random()
-        # print("a ", a)
         if  random.random() < self.pDrop:
             print("dropping packet with seq_num{}".format(packet.seq_no))
             self.dropped_seg += 1
@@ -385,8 +383,8 @@ class Sender:
         elif random.random() < self.pDelay:
             print("Delaying packet with seq_num {}".format(packet.seq_no))
             self.delayed_seg += 1
-            delay_timer = Timer(random.uniform(0, self.maxDelay), self.delay_send(), [packet])
-            delay_timer = start()
+            delay_timer = Timer(random.uniform(0, self.maxDelay), self.delay_send, [packet])
+            delay_timer.start()
             return 1
         else: 
             print("send packet without pld")
@@ -456,11 +454,6 @@ class Sender:
                 self.closed = True
                 print("Connection closed")
                 break
-    
-
-        
-
-
     
 
 # def is_retransmit(self, next_seq_num):
