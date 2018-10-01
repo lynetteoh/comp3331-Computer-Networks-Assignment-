@@ -255,16 +255,18 @@ class Sender:
                     continue
                 print("bytes sent is ",self.bytes_sent)
 
-                # retransmit unacked packets
-                if (self.bytes_sent >= self.file_size and len(self.packet_buffer.keys()) > 0):
-                    print("There are still unacked packets that need to be resent even though self.last_sent ")
-                    l = sorted(self.packet_buffer.keys())
-                    print("list is ", l)
-                    packet = self.packet_buffer[self.send_base]
-                    result = self.pld_send(packet, retransmit=True) 
-                else:
-                    # event: receive data from application layer 
+                # # retransmit unacked packets
+                # if (self.bytes_sent >= self.file_size and len(self.packet_buffer.keys()) > 0):
+                #     print("There are still unacked packets that need to be resent even though self.last_sent ")
+                #     l = sorted(self.packet_buffer.keys())
+                #     print("list is ", l)
+                #     packet = self.packet_buffer[self.send_base]
+                #     result = self.pld_send(packet, retransmit=True) 
+                # else:
+                if self.bytes_sent < self.file_size:
+                    # event: receive data from application layer
                     index = int(self.bytes_sent / self.mss)
+                    print ()
                     payload = self.contents[index]
                     print("about to send payload ")
                     packet = STPPacket(payload, self.seq_no, self.ack_no, checksum=checksum(payload), send_time=time.time())
@@ -290,6 +292,7 @@ class Sender:
                     continue
                 elif result == 1 and len(self.order_buffer) > 0:
                     order_count += 1
+                
 
             # event: ACK received
             print("waiting for ack")
