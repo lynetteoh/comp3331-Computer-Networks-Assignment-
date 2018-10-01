@@ -7,15 +7,6 @@ import random
 from threading import Timer
 
 
-# class STPPacket:
-# 	def __init__(self, data, seq_num, ack_num, ack=False, syn=False, fin=False):
-# 		self.data = data
-# 		self.seq_num = seq_num
-# 		self.ack_num = ack_num
-# 		self.ack = ack
-# 		self.syn = syn
-# 		self.fin = fin
-
 class Timeout:
     def __init__(self, gamma, timeout=0, estRTT=500, devRTT=250):
         self.timeout = timeout
@@ -35,23 +26,6 @@ class Timeout:
             (self.beta * abs(sampleRTT - self.estRTT))
         self.timeout = (self.estRTT + (self.gamma * self.devRTT))/1000
         return self.timeout
-
-
-# class PLD:
-#     def __init__(self, pDrop, pDuplicate, pCorrupt, pOrder, maxOrder, pDelay, maxDelay, seed):
-#         self.pDrop = pDrop
-#         self.pDup = pDuplicate
-#         self.pDelay = pDelay
-#         self.pCorrupt = pCorrupt
-#         self.pOrder = pOrder
-#         self.maxOrder = maxOrder
-#         self.pDelay = pDelay
-#         self.maxDelay = maxDelay
-#         self.seed = seed
-#         random.seed(seed)
-
-#     def execute(self):
-#         return random.random()
 
 
 class Sender:
@@ -266,7 +240,6 @@ class Sender:
                 if self.bytes_sent < self.file_size:
                     # event: receive data from application layer
                     index = int(self.bytes_sent / self.mss)
-                    print ()
                     payload = self.contents[index]
                     print("about to send payload ")
                     packet = STPPacket(payload, self.seq_no, self.ack_no, checksum=checksum(payload), send_time=time.time())
@@ -354,6 +327,7 @@ class Sender:
 
     def pld_send(self, packet, retransmit=False):
         self.pld_seg += 1
+
         if not retransmit:
             payload = packet.data
             self.seq_no = packet.seq_no + len(payload)
