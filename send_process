@@ -1,0 +1,31 @@
+loop (forever) { 
+    switch(event)
+        event: data received from application above
+            create TCP segment with sequence number NextSeqNum 
+            if (timer currently not running)
+                start timer
+            pass segment to IP NextSeqNum=NextSeqNum+length(data) 
+            break;
+
+        event: timer timeout
+            retransmit not-yet-acknowledged segment with
+                smallest sequence number 
+            start timer
+            break;
+
+        event: ACK received, with ACK field value of y 
+            if (y > SendBase) {
+                SendBase=y
+                if (there are currently any not-yet-acknowledged segments)
+                    start timer 
+                }
+            else { /* a duplicate ACK for already ACKed
+                segment */
+                increment number of duplicate ACKs
+                    received for y
+                if (number of duplicate ACKS received for y==3)
+                    /* TCP fast retransmit */
+                    resend segment with sequence number y
+                }
+            break;
+}
