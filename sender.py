@@ -214,7 +214,9 @@ class Sender:
         packet.send_time = -1
         # packet = STPPacket(data, seq_no, ack_no, checksum=checksum, send_time=-1)
         # self.update_log("snd/RXT", self.get_packet_type(packet), packet)
+        print(self.timer_flag)
         self.pld_send(packet, retransmit=True)
+        
         # self.send(packet)
 
 
@@ -225,7 +227,7 @@ class Sender:
             
             print("cur seq num is {}".format(self.seq_no))
             print("still less than mss", (self.bytes_sent-self.send_base))
-            if(self.bytes_sent - self.send_base < self.mws and self.send_base < self.file_size):
+            while(self.bytes_sent - self.send_base < self.mws and self.send_base < self.file_size):
                 
                 if(order_count == self.maxOrder and self.pOrder > 0 and len(self.order_buffer) > 0):
                     print("sending held back segment")
