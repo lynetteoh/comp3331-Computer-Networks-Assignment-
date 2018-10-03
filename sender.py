@@ -88,7 +88,7 @@ class Sender:
         self.pld = 0
 
         random.seed(self.seed)
-        # self.socket.settimeout(1)
+        self.socket.settimeout(1)
         
     def handshake(self):
         while True:
@@ -190,7 +190,7 @@ class Sender:
 
     def close(self):
         if self.timer_flag:
-            self.timer.cancel()
+            # self.timer.cancel()
             self.timer_flag = False
         self.socket.close()
         self.write_stats()
@@ -225,7 +225,7 @@ class Sender:
             
             print("cur seq num is {}".format(self.seq_no))
             print("still less than mss", (self.bytes_sent-self.send_base))
-            if(self.bytes_sent - self.send_base < self.mws and self.send_base < self.file_size):
+            while(self.bytes_sent - self.send_base < self.mws and self.send_base < self.file_size):
                 
                 if(order_count == self.maxOrder and self.pOrder > 0 and len(self.order_buffer) > 0):
                     print("sending held back segment")
@@ -265,8 +265,8 @@ class Sender:
                     packet = STPPacket(payload, self.send_base, self.ack_no, checksum=checksum(payload), send_time=time.time())
                     print("if timeout, sending packet with seq_num {} with timeout {}".format(packet.seq_no, timeout))
                     self.timer_flag = True
-                    self.timer = Timer(timeout, self.retransmission, [packet])
-                    self.timer.start()
+                    # self.timer = Timer(timeout, self.retransmission, [packet])
+                    # self.timer.start()
 
                 self.bytes_sent += self.mss 
                 print("bytes sent is ",self.bytes_sent)         
@@ -278,128 +278,128 @@ class Sender:
                 
 
             # event: ACK received
-            print("waiting for ack")
-            ack = self.receive()
-            recv_time = time.time()
-            if self.receive_ack(ack):
-                received_ack = ack.ack_no
-                print("received ack: ", received_ack)
-                if (self.send_base == 0):
-                    self.send_base += 1
-                if received_ack > self.send_base:
-                    print("received ack: {} and the current send base is {}".format(received_ack, self.send_base))
-                    # stop timer on previous packet. new send base 
-                    if self.timer_flag is True:
-                        self.timer.cancel()
-                        self.timer_flag = False
-                    self.update_log("rcv", self.get_packet_type(ack), ack)
-                    # ack_num will be 1 more than last acked byte
-                    self.send_base = received_ack
-                    print("new send_base ", self.send_base)
-                    remove_key = [key for key in self.packet_buffer.keys() if key < self.send_base]
-                    for key in remove_key:
-                        del(self.packet_buffer[key])
-                        print("delete packet with seq_num {} in buffer".format(key))
-                    print("buffer length is ", len(self.packet_buffer.keys()))
-                    # finish when the ack num equals to the total seq_num
-                    if (ack.ack_no == self.total_seq_no):
-                        print("closing")
-                        self.established = False
-                        self.end = True 
-                        break
-                    # calculate SampleRTT
-                    if ack.send_time != -1:
-                        sampleRTT = recv_time - ack.send_time
-                        timeout = self.timeout.calc_timeout(sampleRTT)
-                    else: 
-                        timeout = self.timeout.timeout
-                    if len(self.packet_buffer) > 0:
-                        packet = self.packet_buffer[self.send_base]
-                        #retransmit on timeout 
-                        print("setting timer with timeout ", timeout)
-                        self.timer = Timer(timeout, self.retransmission, [packet])
-                        self.timer.start()
-                        self.timer_flag = True
+            # print("waiting for ack")
+            # ack = self.receive()
+            # recv_time = time.time()
+            # if self.receive_ack(ack):
+            #     received_ack = ack.ack_no
+            #     print("received ack: ", received_ack)
+            #     if (self.send_base == 0):
+            #         self.send_base += 1
+            #     if received_ack > self.send_base:
+            #         print("received ack: {} and the current send base is {}".format(received_ack, self.send_base))
+            #         # stop timer on previous packet. new send base 
+            #         if self.timer_flag is True:
+            #             self.timer.cancel()
+            #             self.timer_flag = False
+            #         self.update_log("rcv", self.get_packet_type(ack), ack)
+            #         # ack_num will be 1 more than last acked byte
+            #         self.send_base = received_ack
+            #         print("new send_base ", self.send_base)
+            #         remove_key = [key for key in self.packet_buffer.keys() if key < self.send_base]
+            #         for key in remove_key:
+            #             del(self.packet_buffer[key])
+            #             print("delete packet with seq_num {} in buffer".format(key))
+            #         print("buffer length is ", len(self.packet_buffer.keys()))
+            #         # finish when the ack num equals to the total seq_num
+            #         if (ack.ack_no == self.total_seq_no):
+            #             print("closing")
+            #             self.established = False
+            #             self.end = True 
+            #             break
+            #         # calculate SampleRTT
+            #         if ack.send_time != -1:
+            #             sampleRTT = recv_time - ack.send_time
+            #             timeout = self.timeout.calc_timeout(sampleRTT)
+            #         else: 
+            #             timeout = self.timeout.timeout
+            #         if len(self.packet_buffer) > 0:
+            #             packet = self.packet_buffer[self.send_base]
+            #             #retransmit on timeout 
+            #             print("setting timer with timeout ", timeout)
+            #             self.timer = Timer(timeout, self.retransmission, [packet])
+            #             self.timer.start()
+            #             self.timer_flag = True
                     
-                else:
-                    print("receive dup ack")
-                    # total dup_acks
-                    self.dup_acks += 1
-                    # dup_ack for fast retransmission
-                    self.dup_num += 1
-                    self.update_log("rcv/DA", self.get_packet_type(ack), ack)
-                    if (self.dup_num == 3):
-                        print("fast retransmission")
-                        self.dup_num = 0
-                        retransmit_packet = self.packet_buffer[self.send_base]
-                        self.fast_retransmit(retransmit_packet)
+            #     else:
+            #         print("receive dup ack")
+            #         # total dup_acks
+            #         self.dup_acks += 1
+            #         # dup_ack for fast retransmission
+            #         self.dup_num += 1
+            #         self.update_log("rcv/DA", self.get_packet_type(ack), ack)
+            #         if (self.dup_num == 3):
+            #             print("fast retransmission")
+            #             self.dup_num = 0
+            #             retransmit_packet = self.packet_buffer[self.send_base]
+            #             self.fast_retransmit(retransmit_packet)
                     
 
-            # try:
-            #     # event: ACK received
-            #     print("waiting for ack")
-            #     ack = self.receive()
-            #     recv_time = time.time()
-            #     if self.receive_ack(ack):
-            #         received_ack = ack.ack_no
-            #         print("received ack: ", received_ack)
-            #         if (self.send_base == 0):
-            #             self.send_base += 1
-            #         if received_ack > self.send_base:
-            #             print("received ack: {} and the current send base is {}".format(received_ack, self.send_base))
-            #             # stop timer on previous packet. new send base 
-            #             if self.timer_flag is True:
-            #                 # self.timer.cancel()
-            #                 self.timer_flag = False
-            #             self.update_log("rcv", self.get_packet_type(ack), ack)
-            #             # ack_num will be 1 more than last acked byte
-            #             self.send_base = received_ack
-            #             print("new send_base ", self.send_base)
-            #             remove_key = [key for key in self.packet_buffer.keys() if key < self.send_base]
-            #             for key in remove_key:
-            #                 del(self.packet_buffer[key])
-            #                 print("delete packet with seq_num {} in buffer".format(key))
-            #             print("buffer length is ", len(self.packet_buffer.keys()))
-            #             # finish when the ack num equals to the total seq_num
-            #             if (ack.ack_no == self.total_seq_no):
-            #                 print("closing")
-            #                 self.established = False
-            #                 self.end = True 
-            #                 break
-            #             # calculate SampleRTT
-            #             if ack.send_time != -1:
-            #                 sampleRTT = recv_time - ack.send_time
-            #                 timeout = self.timeout.calc_timeout(sampleRTT)
-            #             else: 
-            #                 timeout = self.timeout.timeout
-            #             if len(self.packet_buffer) > 0:
-            #                 packet = self.packet_buffer[self.send_base]
-            #                 #retransmit on timeout 
-            #                 print("setting timer with timeout ", timeout)
-            #                 self.timer = Timer(timeout, self.retransmission, [packet])
-            #                 self.timer.start()
-            #                 self.timer_flag = True
-            #             continue
-            #         else:
-            #             print("receive dup ack")
-            #             # total dup_acks
-            #             self.dup_acks += 1
-            #             # dup_ack for fast retransmission
-            #             self.dup_num += 1
-            #             self.update_log("rcv/DA", self.get_packet_type(ack), ack)
-            #             if (self.dup_num == 3):
-            #                 print("fast retransmission")
-            #                 self.dup_num = 0
-            #                 retransmit_packet = self.packet_buffer[self.send_base]
-            #                 self.fast_retransmit(retransmit_packet)
-            #             continue
-            # except socket.timeout:
-            #     # if ((time.time() - self.start_time) >= self.timeout.timeout):
-            #     #     index = int(self.send_base / self. mss)
-            #     #     payload = self.contents[index]
-            #     #     packet = STPPacket(payload, self.send_base, self.ack_no, checksum=checksum(payload), send_time=time.time())
-            #     #     self.retransmission(packet)
-            #     continue
+            try:
+                # event: ACK received
+                print("waiting for ack")
+                ack = self.receive()
+                recv_time = time.time()
+                if self.receive_ack(ack):
+                    received_ack = ack.ack_no
+                    print("received ack: ", received_ack)
+                    if (self.send_base == 0):
+                        self.send_base += 1
+                    if received_ack > self.send_base:
+                        print("received ack: {} and the current send base is {}".format(received_ack, self.send_base))
+                        # stop timer on previous packet. new send base 
+                        if self.timer_flag is True:
+                            # self.timer.cancel()
+                            self.timer_flag = False
+                        self.update_log("rcv", self.get_packet_type(ack), ack)
+                        # ack_num will be 1 more than last acked byte
+                        self.send_base = received_ack
+                        print("new send_base ", self.send_base)
+                        remove_key = [key for key in self.packet_buffer.keys() if key < self.send_base]
+                        for key in remove_key:
+                            del(self.packet_buffer[key])
+                            print("delete packet with seq_num {} in buffer".format(key))
+                        print("buffer length is ", len(self.packet_buffer.keys()))
+                        # finish when the ack num equals to the total seq_num
+                        if (ack.ack_no == self.total_seq_no):
+                            print("closing")
+                            self.established = False
+                            self.end = True 
+                            break
+                        # calculate SampleRTT
+                        if ack.send_time != -1:
+                            sampleRTT = recv_time - ack.send_time
+                            timeout = self.timeout.calc_timeout(sampleRTT)
+                        else: 
+                            timeout = self.timeout.timeout
+                        if len(self.packet_buffer) > 0:
+                            packet = self.packet_buffer[self.send_base]
+                            #retransmit on timeout 
+                            print("setting timer with timeout ", timeout)
+                            # self.timer = Timer(timeout, self.retransmission, [packet])
+                            # self.timer.start()
+                            self.timer_flag = True
+                        continue
+                    else:
+                        print("receive dup ack")
+                        # total dup_acks
+                        self.dup_acks += 1
+                        # dup_ack for fast retransmission
+                        self.dup_num += 1
+                        self.update_log("rcv/DA", self.get_packet_type(ack), ack)
+                        if (self.dup_num == 3):
+                            print("fast retransmission")
+                            self.dup_num = 0
+                            retransmit_packet = self.packet_buffer[self.send_base]
+                            self.fast_retransmit(retransmit_packet)
+                        continue
+            except socket.timeout:
+                if ((time.time() - self.start_time) >= self.timeout.timeout):
+                    index = int(self.send_base / self. mss)
+                    payload = self.contents[index]
+                    packet = STPPacket(payload, self.send_base, self.ack_no, checksum=checksum(payload), send_time=time.time())
+                    self.retransmission(packet)
+                continue
                 
             
     def fast_retransmit(self, packet):
