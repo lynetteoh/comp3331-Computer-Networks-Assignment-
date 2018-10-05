@@ -10,21 +10,10 @@ class STPPacket:
 		self.checksum = checksum
 		self.send_time = send_time 	# to keep track of the send time of a packet
 
-	def __lt__(self, other):
-		return self.seq_no < other.seq_no
-	
-	def __eq__(self, other):
-		return self.seq_no == other.seq_no
-	
-# def wrap_around(a, b):
-# 	c = a + b
-# 	result = (c & 0xffff) + (c >> 16)
-# 	return result
 
 
 def checksum(payload):
 	sum = 0
-	# print(payload)
 	# checksum for 16-bit word 
 	# 1 character is 8 bit , so has to combine 2 character to get 16-bit 
 	for i in range(0, len(payload)-1, 2):
