@@ -91,14 +91,18 @@ class Sender:
         random.seed(self.seed)
         self.socket.settimeout(0.4)
         
+    # 3 ways handshake
     def handshake(self):
         while True:
             if self.closed is True:
                 # closed state
                 print("\n==== STATE: CLOSED ====")
+                # send syn
                 syn = STPPacket(b'', self.seq_no, self.ack_no,syn=True)
                 self.send(syn)
+                # update log
                 self.update_log("snd",self.get_packet_type(syn) , syn)
+                # update state
                 self.closed = False
                 self.syn_sent = True
 
@@ -107,10 +111,6 @@ class Sender:
                 print("\n====STATE: SYN SENT====")
                 synack = sender.receive()
                 if self.receive_synack(synack):
-                    print(synack.seq_no)
-                    print(synack.ack_no)
-                    print(synack.ack)
-                    print(synack.syn)
                     self.ack_no = synack.seq_no + 1
                     self.update_log("rcv", self.get_packet_type(synack), synack)
                     print("SYNACK received")
@@ -124,6 +124,7 @@ class Sender:
                     print("==== STP CONNECTION ESTABLISHED ===\n")
                     break
 
+    # create socket
     def open_connection(self):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -132,24 +133,30 @@ class Sender:
             print("Socket creation failed")
             sys.exit()
 
+    # send packet through socket to receiver
     def send(self, packet):
         self.seg_trans += 1
         pkt = pickle.dumps(packet)
         self.socket.sendto(pkt, (self.receiver_ip, self.receiver_port))
 
+    # receive packet from socket
     def receive(self):
         data, addr = self.socket.recvfrom(4096)
         packet = pickle.loads(data)
         return packet
 
+    # calculate the size of the file
     def calc_total_payload(self):
         with open(self.file, 'rb') as f:
             file_contents = f.read()
+        # get file size
         self.file_size = len(file_contents)
+        # calculate total seq number
         self.total_seq_no = self.seq_no + len(file_contents)
         print("final seq_num is {}".format(self.total_seq_no))
         print("file size: {}".format(self.file_size))
 
+    # read file and split file contents into parts with size mss.
     def process_data(self):
         with open(self.file, 'rb') as f:
             file_contents = f.read()
@@ -157,6 +164,7 @@ class Sender:
         self.contents = [file_contents[i: self.mss+i]
                         for i in range(0, len(file_contents), self.mss)]
 
+    # updtae log 
     def update_log(self, action, packet_type, packet):
         # execution time in miliseconds
         excution_time = (time.time() - self.start_time) * 1000
@@ -166,28 +174,33 @@ class Sender:
                     packet.seq_no, len(packet.data), packet.ack_no))
 
 
+    # check for synack packet
     def receive_synack(self, stp_packet):
         if stp_packet.syn and stp_packet.ack:
             return True
         return False
 
+    # check for ack packet
     def receive_ack(self, stp_packet):
         if stp_packet.ack:
             return True
         return False
 
+    #check for fin packet
     def receive_fin(self, stp_packet):
         if stp_packet.fin:
             return True
         return False
 
+    # update log file and close connection
     def close(self):
-        if self.timer_flag:
-            # self.timer.cancel()
-            self.timer_flag = False
+        # if self.timer_flag:
+        #     self.timer.cancel()
+        #     self.timer_flag = False
         self.socket.close()
         self.write_stats()
     
+    # get packet type
     def get_packet_type(self, packet):
         if len(packet.data) > 0:
             return 'D'
@@ -219,6 +232,7 @@ class Sender:
         print("maxOrder ", self.maxOrder)
         while True:
 
+            # send packet after maxOrder packets have been sent
             if (self.order_count == self.maxOrder and self.pOrder > 0 and self.bytes_sent - self.send_base <= self.mws):
                 print("sending held back segment")
                 packet = self.order_buffer.pop()
@@ -229,6 +243,7 @@ class Sender:
                 print ("sending held back segment with seq_num ".format( packet.seq_no))
                    
             
+            # check if last byte sent - last byte acked < mws and if we still have more to send
             if(self.bytes_sent - self.send_base < self.mws and self.bytes_sent < self.file_size):
                 print("cur seq num is {}".format(self.seq_no))
                 print("still less than mss", (self.bytes_sent-self.send_base))
@@ -243,15 +258,7 @@ class Sender:
                 #     print ("sending held back segment with seq_num ".format( packet.seq_no))
                 #     continue
                 
-
-                # # retransmit unacked packets
-                # if (self.bytes_sent >= self.file_size and len(self.packet_buffer.keys()) > 0):
-                #     print("There are still unacked packets that need to be resent even though self.last_sent ")
-                #     l = sorted(self.packet_buffer.keys())
-                #     print("list is ", l)
-                #     packet = self.packet_buffer[self.send_base]
-                #     result = self.pld_send(packet, retransmit=True) 
-                # else:
+                # if there is more to send
                 if self.bytes_sent < self.file_size:
                     # event: receive data from application layer
                     index = int(self.bytes_sent / self.mss)
@@ -358,8 +365,12 @@ class Sender:
                 if self.receive_ack(ack):
                     received_ack = ack.ack_no
                     print("received ack: ", received_ack)
+                    
+                    # send base start from 1
                     if (self.send_base == 0):
                         self.send_base += 1
+
+                    # receiver has received all bytes up to received ack
                     if received_ack > self.send_base:
                         print("received ack: {} and the current send base is {}".format(received_ack, self.send_base))
                         # stop timer on previous packet. new send base 
@@ -380,6 +391,7 @@ class Sender:
                             print("closing")
                             self.established = False
                             self.end = True 
+                            self.timer_flag = False
                             break
                         # calculate SampleRTT
                         if ack.send_time != -1:
@@ -417,7 +429,7 @@ class Sender:
                     self.retransmission(packet)
                 continue
                 
-            
+    # fast retransmission after receiving 3 dup acks    
     def fast_retransmit(self, packet):
         self.fast_rxt_seg += 1
         packet.send_time = -1
@@ -426,6 +438,7 @@ class Sender:
         self.pld_send(packet, retransmit=True)
        
 
+    # pld module
     def pld_send(self, packet, retransmit=False):
         self.pld_seg += 1
         if not retransmit:
@@ -515,6 +528,7 @@ class Sender:
                 self.update_log("snd/RXT", self.get_packet_type(packet), packet)
             return 1
     
+    # send a packet after delay between 0 and maxDelay
     def delay_send(self, packet):
         if len(self.order_buffer) > 0:
             self.order_count += 1
@@ -522,6 +536,7 @@ class Sender:
         self.send(packet)
 
 
+    # write stats to log file
     def write_stats(self):
         with open("Sender_log.txt", 'a+') as f:
             f.write(
@@ -544,6 +559,7 @@ class Sender:
             f.write(
                 "=======================================================================")
 
+    # connection termination 
     def close_connection(self):
         while True:
             if self.end is True:
@@ -579,20 +595,11 @@ class Sender:
                 self.closed = True
                 print("Connection closed")
                 break
-    
-
-# def is_retransmit(self, next_seq_num):
-#     seq_num = next_seq_num - (self.mss + 1)
-#     for i in range(len(self.retransmit_buffer)) {
-#         if seq_num in self.retransmit_buffer.keys(){
-#             del(self.retransmit_buffer[seq_num])
-#             return True 
-#         }
-#     }
-#     return False
 
 
 if __name__ == '__main__':
+
+    # check if user input correct command 
     if len(sys.argv) != 15:
         print(" python sender.py receiver_host_ip receiver_port file.pdf MWS MSS gamma pDrop pDuplicate pCorrupt pOrder maxOrder pDelay maxDelay seed")
     else:
@@ -607,18 +614,19 @@ if __name__ == '__main__':
         sender = Sender(receiver_host_ip, receiver_port, file, MWS, MSS, gamma,
                         pDrop, pDuplicate, pCorrupt, pOrder, maxOrder, pDelay, maxDelay, seed)
 
+        # 3 ways handshake
         sender.handshake()
+
+        # read pdf file and break them into parts with size of mss
         sender.process_data()
+
+        # calculate the size of the file
         sender.calc_total_payload()
 
-        # while sender.established:
-        # 	sender.create_packet(0)
-        # 	sender.established = False
-        # 	if not sender.established:
-        # 		sender.end = True
-        # 		break
-
+        # send file to receiver
         sender.send_file()
+
+        # close connection after the file has send across
         if sender.end is True:
             sender.close_connection()
 
