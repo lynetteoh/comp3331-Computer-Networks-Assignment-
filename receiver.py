@@ -40,7 +40,7 @@ class Receiver:
 		self.dup_ack =  0
 
 		
-	def initiate_connection(self):
+	def handshake(self):
 		while True: 
 			# listen state
 			if self.listen == True:
@@ -96,7 +96,7 @@ class Receiver:
 	# update log dile
 	def update_log(self, action, packet_type, packet):
 		# execution time in miliseconds
-		excution_time = (time.time() - self.start_time) * 1000
+		excution_time = (time.time() - self.start_time)
 
 		# write to receiver log 
 		with open("Receiver_log.txt", 'a+') as f:
@@ -420,7 +420,7 @@ if __name__ == '__main__':
 		f.close()
 
 		# 3 ways handshake
-		receiver.initiate_connection() 
+		receiver.handshake() 
 
 		# receive packet from sender
 		receiver.receive_packet()

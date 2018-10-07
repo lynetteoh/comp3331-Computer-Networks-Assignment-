@@ -48,13 +48,11 @@ class Sender:
         self.maxDelay = int(maxDelay)
         self.seed = int(seed)
         self.socket = self.open_connection()
-        self.timer = None
-        self.start_time = time.time()
-        self.timeout = Timeout(self.gamma)
+        self.start_time = time.time()           # execution time of the program
+        self.timeout = Timeout(self.gamma)      # timeout class
         self.timer_flag = False
-        self.send_time = None 
-        self.prev_time = None
-    
+        self.send_time = None                   # send time of a packet including retransmission
+        self.prev_time = None                   # send time of a packet excluding retransmission to calculate RTT
 
         # states of sender
         self.closed = True
@@ -219,7 +217,8 @@ class Sender:
         if len(self.order_buffer) > 0:
             self.order_count += 1
         self.timeout_rxt_seg += 1
-        self.send_time = -1
+        self.prev_time = -1
+        self.send_time = time.time()
         self.pld_send(packet, retransmit=True)
 
     # 
@@ -276,8 +275,10 @@ class Sender:
                         timeout = self.timeout.initial_timeout()
                     else:
                         timeout = self.timeout.timeout
+                    print("setting timer with timeout ", timeout)
                     self.timer_flag = True
                     self.send_time = time.time()
+                    self.prev_time = self.send_time
                   
                     
 
@@ -301,10 +302,6 @@ class Sender:
                     # get the ack number
                     received_ack = ack.ack_no
                     print("received ack: ", received_ack)
-                    
-                    # send base start from 1
-                    # if (self.send_base == 0):
-                    #     self.send_base += 1
 
                     # receiver has received all bytes up to received ack
                     if received_ack > self.send_base:
@@ -333,8 +330,9 @@ class Sender:
                             self.timer_flag = False
                             break
                         # calculate SampleRTT
-                        if self.send_time != -1:
-                            sampleRTT = recv_time - self.send_time
+                        if self.prev_time != -1:
+                            sampleRTT = (recv_time - self.prev_time) * 1000
+                            print("sampleRTT is ", sampleRTT)
                             timeout = self.timeout.calc_timeout(sampleRTT)
                         else: 
                             timeout = self.timeout.timeout
@@ -345,15 +343,18 @@ class Sender:
                             # new timer 
                             self.timer_flag = True
                             self.send_time = time.time()
+                            self.prev_time = self.send_time
                         self.dup_num = 0
                         continue
                     else:
+                        # receive dup ack
                         print("receive dup ack")
                         # total dup_acks
                         self.dup_acks += 1
                         # dup_ack for fast retransmission
                         self.dup_num += 1
                         self.update_log("rcv/DA", self.get_packet_type(ack), ack)
+                        #fast retransmission
                         if (self.dup_num == 3):
                             print("fast retransmission")
                             self.dup_num = 0
@@ -370,7 +371,8 @@ class Sender:
     # fast retransmission after receiving 3 dup acks    
     def fast_retransmit(self, packet):
         self.fast_rxt_seg += 1
-        self.send_time = -1
+        self.send_time = time.time()
+        self.prev_time = -1
         if len(self.order_buffer) > 0:
             self.order_count += 1
         self.pld_send(packet, retransmit=True)
@@ -386,6 +388,7 @@ class Sender:
 
         self.pld += 5
         if  random.random() < self.pDrop:
+            # drop packet
             self.pld -= 4
             print(self.pld)
             print("dropping packet with seq_num{}".format(packet.seq_no))
@@ -395,9 +398,12 @@ class Sender:
             return -1
  
         elif random.random() < self.pDuplicate:
+            # duplicate packet
             self.pld -= 3
             print(self.pld)
             print("duplicate packet with seq_num{}".format(packet.seq_no))
+            if len(self.order_buffer) > 0:
+                self.order_count += 1
             self.send(packet)
             self.send(packet)
             self.dup_seg += 1
@@ -407,6 +413,7 @@ class Sender:
             return 1
 
         elif random.random() < self.pCorrupt:
+            # corrupting packet
             self.pld -= 2
             print(self.pld)
             print("corrupting packet with seq_num{}".format(packet.seq_no))
@@ -421,8 +428,10 @@ class Sender:
             return 1
 
         elif random.random() < self.pOrder:
+            # reordering packet
             self.pld -= 1
             print(self.pld)
+            # check if we have any reorder packet currently waiting to be sent
             if len(self.order_buffer) != 0:
                 self.send(packet)
                 if not retransmit:
@@ -437,6 +446,7 @@ class Sender:
                 return 0
 
         elif random.random() < self.pDelay:
+            # delaying packet
             print(self.pld)
             print("Delaying packet with seq_num {}".format(packet.seq_no))
             self.delayed_seg += 1
@@ -444,6 +454,7 @@ class Sender:
             delay_timer.start()
             return 0
         else: 
+            # send packet without any error
             print("pld calls: ", self.pld)
             print("send packet without pld")
             self.send(packet)
@@ -487,35 +498,64 @@ class Sender:
     # connection termination 
     def close_connection(self):
         while True:
+
+            # end state
             if self.end is True:
+                # create fin packet
                 fin = STPPacket(b'', self.seq_no, self.ack_no, fin=True)
                 self.send(fin)
+
+                # update log
                 self.update_log("snd", self.get_packet_type(fin), fin)
                 self.seq_no += 1
                 print("fin sent")
+
+                #update state
                 self.fin_wait = True
                 self.end = False
+            
+            # fin wait state
             elif self.fin_wait is True:
                 print("====fin_wait_1====")
                 ack = self.receive()
+                # check if receive ack
                 if self.receive_ack(ack):
+                    # update log
                     self.update_log("rcv", self.get_packet_type(ack), ack)
+
+                    # update state
                     self.fin_wait = False
                     self.fin_wait_2 = True
+
+            # fin wait 2 state
             elif self.fin_wait_2 is True:
                 print("====fin_wait_2====")
+                # receive fin
                 fin = self.receive()
                 if self.receive_fin(fin):
+                    # update log
                     self.update_log("rcv", self.get_packet_type(fin), fin)
+
                     self.ack_no = fin.seq_no + 1
+
+                    # send ack
                     ack1 = STPPacket(b'', self.seq_no, self.ack_no, ack=True)
                     self.send(ack1)
+
+                    # update log 
                     self.update_log("snd", self.get_packet_type(ack1), ack1)
+
+                    # update state
                     self.fin_wait_2 = False
                     self.time_wait = True
+            
+            #time wait state
             elif self.time_wait is True:
                 print("====time_wait====")
+                # close socket and update log
                 self.close()
+
+                # update state
                 self.time_wait = False
                 self.closed = True
                 print("Connection closed")
