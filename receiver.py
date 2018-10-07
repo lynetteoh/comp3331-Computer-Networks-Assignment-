@@ -199,7 +199,7 @@ class Receiver:
 						print("incorrect checksum, return previous ack")
 
 						# create ack and sent it 
-						ack = STPPacket(b'',self.seq_no, self.ack_no, send_time=-1, ack=True)
+						ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
 						self.send(ack, addr)
 
 						#update log 
@@ -265,12 +265,12 @@ class Receiver:
 
 						# create ack, send ack and update log file
 						if sent_dup_ack == 0:
-							ack = STPPacket(b'',self.seq_no, self.ack_no, send_time=-1, ack=True)
+							ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
 							self.send(ack, addr)
 							self.update_log("snd", self.get_packet_type(ack),ack)
 							sent_dup_ack += 1
 						else:
-							ack = STPPacket(b'',self.seq_no, self.ack_no, send_time=-1, ack=True)
+							ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
 							self.send(ack, addr)
 							self.update_log("snd/DA", self.get_packet_type(ack), ack)
 							sent_dup_ack += 1
@@ -295,12 +295,12 @@ class Receiver:
 						# create ack, send ack and update log file
 						if sent_dup_ack == 0:
 							# send_time = packet.send_time
-							ack = STPPacket(b'',self.seq_no, self.ack_no, send_time=-1, ack=True)
+							ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
 							self.send(ack, addr)
 							self.update_log("snd", self.get_packet_type(ack),ack)
 							sent_dup_ack += 1
 						else:
-							ack = STPPacket(b'',self.seq_no, self.ack_no, send_time=-1, ack=True)
+							ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
 							self.send(ack, addr)
 							self.update_log("snd/DA", self.get_packet_type(ack), ack)
 							sent_dup_ack += 1
@@ -326,12 +326,12 @@ class Receiver:
 						# create ack, send ack and update log 
 						if sent_dup_ack == 0:
 							# send_time = packet.send_time
-							ack = STPPacket(b'',self.seq_no, self.ack_no, send_time=-1, ack=True)
+							ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
 							self.send(ack, addr)
 							self.update_log("snd", self.get_packet_type(ack),ack)
 							sent_dup_ack += 1
 						else:
-							ack = STPPacket(b'',self.seq_no, self.ack_no, send_time=-1, ack=True)
+							ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
 							self.send(ack, addr)
 							self.update_log("snd/DA", self.get_packet_type(ack), ack)
 							sent_dup_ack += 1

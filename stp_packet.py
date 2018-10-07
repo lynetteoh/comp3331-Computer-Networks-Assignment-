@@ -1,6 +1,6 @@
 # stp packet structure
 class STPPacket:
-	def __init__(self, data, seq_no, ack_no, checksum=0,send_time=0, ack=False, syn=False, fin=False):
+	def __init__(self, data, seq_no, ack_no, checksum=0,ack=False, syn=False, fin=False):
 		self.data = data			# payload
 		self.seq_no = seq_no		# seq number of the packet
 		self.ack_no = ack_no		# ack number of the packet
@@ -8,7 +8,6 @@ class STPPacket:
 		self.syn = syn				# syn flag to indicate syn
 		self.fin = fin				# fin flag to indicate fin
 		self.checksum = checksum	#checksum of the payload
-		# self.send_time = send_time 	# to keep track of the send time of a packet
 
 
 # calculate the checksum of a packet at the sender
