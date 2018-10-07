@@ -237,8 +237,9 @@ class Receiver:
 						self.update_buffer()
 						
 						# create ack and send it
-						send_time = packet.send_time
-						ack = STPPacket(b'',self.seq_no, self.ack_no, send_time=send_time, ack=True)
+						# send_time = packet.send_time
+						# ack = STPPacket(b'',self.seq_no, self.ack_no, send_time=send_time, ack=True)
+						ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
 						print("sending ack")
 						self.send(ack, addr)
 

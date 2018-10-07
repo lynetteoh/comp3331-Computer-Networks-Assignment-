@@ -52,6 +52,8 @@ class Sender:
         self.start_time = time.time()
         self.timeout = Timeout(self.gamma)
         self.timer_flag = False
+        self.send_time = None 
+        self.prev_time = None
     
 
         # states of sender
@@ -85,11 +87,13 @@ class Sender:
         self.send_base = 0			# oldest unacked segment
         self.dup_num = 0 			# use to keep track if we have received 3 dup_acks
         self.contents = []			# contents of a file
+        self.order_count = 0        # used to keep track of packet sent for packet reordering
         self.pld = 0
-        self.order_count = 0
+        
+        
 
         random.seed(self.seed)
-        self.socket.settimeout(0.4)
+        self.socket.settimeout(0.1)
         
     # 3 ways handshake
     def handshake(self):
@@ -219,7 +223,8 @@ class Sender:
         if len(self.order_buffer) > 0:
             self.order_count += 1
         self.timeout_rxt_seg += 1
-        packet.send_time = -1
+        self.send_time = -1
+        # packet.send_time = -1
         # packet = STPPacket(data, seq_no, ack_no, checksum=checksum, send_time=-1)
         # self.update_log("snd/RXT", self.get_packet_type(packet), packet)
         self.pld_send(packet, retransmit=True)
@@ -244,7 +249,7 @@ class Sender:
                    
             
             # check if last byte sent - last byte acked < mws and if we still have more to send
-            if(self.bytes_sent - self.send_base < self.mws and self.bytes_sent < self.file_size):
+            while(self.bytes_sent - self.send_base < self.mws and self.bytes_sent < self.file_size):
                 print("cur seq num is {}".format(self.seq_no))
                 print("still less than mss", (self.bytes_sent-self.send_base))
                 print("order_count", self.order_count)
@@ -269,8 +274,8 @@ class Sender:
                     self.packet_buffer[self.seq_no] = packet
                     result = self.pld_send(packet)
                     self.bytes_sent += len(payload)
-                # else: 
-                #     break
+                else: 
+                    break
                     
 
                 # event: retransmit after timer timeout, send the segment with the smallest seq num
@@ -394,8 +399,10 @@ class Sender:
                             self.timer_flag = False
                             break
                         # calculate SampleRTT
-                        if ack.send_time != -1:
-                            sampleRTT = recv_time - ack.send_time
+                        # if ack.send_time != -1:
+                        if self.send_time != -1:
+                            # sampleRTT = recv_time - ack.send_time
+                            sampleRTT = recv_time - self.send_time
                             timeout = self.timeout.calc_timeout(sampleRTT)
                         else: 
                             timeout = self.timeout.timeout
@@ -407,6 +414,7 @@ class Sender:
                             # self.timer.start()
                             self.timer_flag = True
                             self.send_time = time.time()
+                        self.dup_num = 0
                         continue
                     else:
                         print("receive dup ack")
@@ -432,9 +440,11 @@ class Sender:
     # fast retransmission after receiving 3 dup acks    
     def fast_retransmit(self, packet):
         self.fast_rxt_seg += 1
-        packet.send_time = -1
+        # packet.send_time = -1
+        self.send_time = -1
         if len(self.order_buffer) > 0:
             self.order_count += 1
+        self.update_log("fast_retransmission", self.get_packet_type(packet), packet)
         self.pld_send(packet, retransmit=True)
        
 
@@ -468,11 +478,6 @@ class Sender:
             self.dup_seg += 1
             self.update_log("snd", self.get_packet_type(packet), packet)
             self.update_log("snd/dup", self.get_packet_type(packet), packet)
-            # if retransmit is False:
-            #     self.update_log("snd", self.get_packet_type(packet), packet)
-            #     self.update_log("snd/dup", self.get_packet_type(packet), packet)
-            # else:
-            #     self.update_log("snd/RXT", self.get_packet_type(packet), packet)
             return 1
 
         elif random.random() < self.pCorrupt:
@@ -487,10 +492,6 @@ class Sender:
             self.send(new_packet)
             self.corrupted_seg += 1
             self.update_log("snd/corr", self.get_packet_type(packet), packet)
-            # if retransmit is False:
-            #     self.update_log("snd/corr", self.get_packet_type(packet), packet)
-            # else:
-            #     self.update_log("snd/RXT", self.get_packet_type(packet), packet)
             return 1
 
         elif random.random() < self.pOrder:

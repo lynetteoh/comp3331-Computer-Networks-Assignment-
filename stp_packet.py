@@ -8,7 +8,7 @@ class STPPacket:
 		self.syn = syn				# syn flag to indicate syn
 		self.fin = fin				# fin flag to indicate fin
 		self.checksum = checksum	#checksum of the payload
-		self.send_time = send_time 	# to keep track of the send time of a packet
+		# self.send_time = send_time 	# to keep track of the send time of a packet
 
 
 # calculate the checksum of a packet at the sender
