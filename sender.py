@@ -476,6 +476,7 @@ class Sender:
             self.send(packet)
             self.send(packet)
             self.dup_seg += 1
+            self.pld_seg += 1 
             self.update_log("snd", self.get_packet_type(packet), packet)
             self.update_log("snd/dup", self.get_packet_type(packet), packet)
             return 1
