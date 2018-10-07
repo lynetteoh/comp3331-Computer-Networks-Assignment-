@@ -270,7 +270,7 @@ class Sender:
                     print("bytes sent 1 is ",self.bytes_sent) 
                     payload = self.contents[index]
                     print("about to send payload ")
-                    packet = STPPacket(payload, self.seq_no, self.ack_no, checksum=checksum(payload), send_time=time.time())
+                    packet = STPPacket(payload, self.seq_no, self.ack_no, checksum=checksum(payload))
                     self.packet_buffer[self.seq_no] = packet
                     result = self.pld_send(packet)
                     self.bytes_sent += len(payload)
@@ -286,7 +286,7 @@ class Sender:
                         timeout = self.timeout.timeout
                     index = int(self.send_base / self. mss)
                     payload = self.contents[index]
-                    packet = STPPacket(payload, self.send_base, self.ack_no, checksum=checksum(payload), send_time=time.time())
+                    packet = STPPacket(payload, self.send_base, self.ack_no, checksum=checksum(payload))
                     print("if timeout, sending packet with seq_num {} with timeout {}".format(packet.seq_no, timeout))
                     self.timer_flag = True
                     self.send_time = time.time()
@@ -433,7 +433,7 @@ class Sender:
                 if ((time.time() - self.send_time) >= self.timeout.timeout):
                     index = int(self.send_base / self. mss)
                     payload = self.contents[index]
-                    packet = STPPacket(payload, self.send_base, self.ack_no, checksum=checksum(payload), send_time=time.time())
+                    packet = STPPacket(payload, self.send_base, self.ack_no, checksum=checksum(payload))
                     self.retransmission(packet)
                 continue
                 
