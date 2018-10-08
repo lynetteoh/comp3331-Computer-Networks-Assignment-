@@ -165,8 +165,8 @@ class Sender:
 
     # updtae log 
     def update_log(self, action, packet_type, packet):
-        # execution time in miliseconds
-        excution_time = (time.time() - self.start_time) * 1000
+        # execution time in seconds
+        excution_time = time.time() - self.start_time
         # open file and write to file
         with open("Sender_log.txt", 'a+') as f:
             f.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(

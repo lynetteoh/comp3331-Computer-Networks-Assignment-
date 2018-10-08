@@ -25,9 +25,8 @@ class Receiver:
 		# states
 		self.listen = True
 		self.syn_rcv = False
-		self.synack_sent = False
 		self.established = False 
-		self.end = False
+		self.closed = False
 		self.close_wait = False 
 		self.last_ack = False
 
@@ -57,11 +56,11 @@ class Receiver:
 					self.update_log("snd", self.get_packet_type(synack), synack)
 					#increment seq for SYNACK
 					self.seq_no += 1
-					self.synack_sent = True 
+					self.syn_rcv = True 
 					self.listen = False
 
 			# synack sent 
-			if self.synack_sent == True:
+			if self.syn_rcv == True:
 				print("\n==== STATE: SYNACK SENT =====T")
 				ack, client_addr = self.receive()
 				# receive ack 
@@ -71,7 +70,7 @@ class Receiver:
 					self.total_seg_received += 1
 					# update state
 					self.established = True 
-					self.synack_sent = False
+					self.syn_rcv = False
 					break
 
 
@@ -95,8 +94,8 @@ class Receiver:
 
 	# update log dile
 	def update_log(self, action, packet_type, packet):
-		# execution time in miliseconds
-		excution_time = (time.time() - self.start_time)
+		# execution time in seconds
+		excution_time = time.time() - self.start_time
 
 		# write to receiver log 
 		with open("Receiver_log.txt", 'a+') as f:
@@ -199,18 +198,18 @@ class Receiver:
 						print("incorrect checksum, return previous ack")
 
 						# create ack and sent it 
-						ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
-						self.send(ack, addr)
+						# ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
+						# self.send(ack, addr)
 
 						#update log 
-						if sent_dup_ack == 0: 
-							self.update_log("snd", self.get_packet_type(ack),ack)
-							sent_dup_ack += 1
-						else: 
-							self.update_log("snd/DA", self.get_packet_type(ack), ack)
-							sent_dup_ack += 1
-							self.dup_ack += 1
-						print("sent_dup_ack", sent_dup_ack)
+						# if sent_dup_ack == 0: 
+						# 	self.update_log("snd", self.get_packet_type(ack),ack)
+						# 	sent_dup_ack += 1
+						# else: 
+						# 	self.update_log("snd/DA", self.get_packet_type(ack), ack)
+						# 	sent_dup_ack += 1
+						# 	self.dup_ack += 1
+						# print("sent_dup_ack", sent_dup_ack)
 						continue
 					
 					# buffer all new accepted packet that is not duplicate - could be out of order
@@ -264,18 +263,18 @@ class Receiver:
 						self.update_log("rcv/dup", self.get_packet_type(packet), packet)
 
 						# create ack, send ack and update log file
-						if sent_dup_ack == 0:
-							ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
-							self.send(ack, addr)
-							self.update_log("snd", self.get_packet_type(ack),ack)
-							sent_dup_ack += 1
-						else:
-							ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
-							self.send(ack, addr)
-							self.update_log("snd/DA", self.get_packet_type(ack), ack)
-							sent_dup_ack += 1
-							self.dup_ack += 1
-							print("sent_dup_ack", sent_dup_ack)
+						# if sent_dup_ack == 0:
+						# 	ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
+						# 	self.send(ack, addr)
+						# 	self.update_log("snd", self.get_packet_type(ack),ack)
+						# 	sent_dup_ack += 1
+						# else:
+						ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
+						self.send(ack, addr)
+						self.update_log("snd/DA", self.get_packet_type(ack), ack)
+						sent_dup_ack += 1
+						self.dup_ack += 1
+						print("sent_dup_ack", sent_dup_ack)
 						
 					elif packet.seq_no > self.ack_no and packet.seq_no != self.dup_ack_no:
 						# receive out of order packet
@@ -293,19 +292,19 @@ class Receiver:
 							sent_dup_ack += 1
 
 						# create ack, send ack and update log file
-						if sent_dup_ack == 0:
-							# send_time = packet.send_time
-							ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
-							self.send(ack, addr)
-							self.update_log("snd", self.get_packet_type(ack),ack)
-							sent_dup_ack += 1
-						else:
-							ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
-							self.send(ack, addr)
-							self.update_log("snd/DA", self.get_packet_type(ack), ack)
-							sent_dup_ack += 1
-							self.dup_ack += 1
-							print("sent_dup_ack", sent_dup_ack)
+						# if sent_dup_ack == 0:
+						# 	# send_time = packet.send_time
+						# 	ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
+						# 	self.send(ack, addr)
+						# 	self.update_log("snd", self.get_packet_type(ack),ack)
+						# 	sent_dup_ack += 1
+						# else:
+						ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
+						self.send(ack, addr)
+						self.update_log("snd/DA", self.get_packet_type(ack), ack)
+						sent_dup_ack += 1
+						self.dup_ack += 1
+						print("sent_dup_ack", sent_dup_ack)
 							
 
 					elif packet.seq_no > self.ack_no and packet.seq_no == self.dup_ack_no:
@@ -324,19 +323,19 @@ class Receiver:
 							sent_dup_ack += 1
 
 						# create ack, send ack and update log 
-						if sent_dup_ack == 0:
-							# send_time = packet.send_time
-							ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
-							self.send(ack, addr)
-							self.update_log("snd", self.get_packet_type(ack),ack)
-							sent_dup_ack += 1
-						else:
-							ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
-							self.send(ack, addr)
-							self.update_log("snd/DA", self.get_packet_type(ack), ack)
-							sent_dup_ack += 1
-							self.dup_ack += 1
-							print("sent_dup_ack", sent_dup_ack)
+						# if sent_dup_ack == 0:
+						# 	# send_time = packet.send_time
+						# 	ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
+						# 	self.send(ack, addr)
+						# 	self.update_log("snd", self.get_packet_type(ack),ack)
+						# 	sent_dup_ack += 1
+						# else:
+						ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
+						self.send(ack, addr)
+						self.update_log("snd/DA", self.get_packet_type(ack), ack)
+						sent_dup_ack += 1
+						self.dup_ack += 1
+						print("sent_dup_ack", sent_dup_ack)
 
 	# release out of order packet in buffer and append to received_bytes
 	def update_buffer(self):
