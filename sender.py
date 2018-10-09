@@ -9,18 +9,20 @@ from threading import Timer
 
 class Timeout:
     def __init__(self, gamma, timeout=0, estRTT=500, devRTT=250):
-        self.timeout = timeout
-        self.estRTT = estRTT
-        self.devRTT = devRTT
-        self.alpha = 0.125
-        self.beta = 0.25
-        self.gamma = gamma
+        self.timeout = timeout              # current timeout 
+        self.estRTT = estRTT                # estRTT
+        self.devRTT = devRTT                # devRTT
+        self.alpha = 0.125                  # alpha value
+        self.beta = 0.25                    # beta value
+        self.gamma = gamma                  # gamma value
 
+    # calculate initial timeout value during the start of the program
     def initial_timeout(self):
         self.timeout = (self.estRTT + (self.gamma * self.devRTT)) /1000
         print("timeout ", self.timeout)
         return self.timeout
 
+    # calculate timeout interval
     def calc_timeout(self, sampleRTT):
         self.estRTT = ((1 - self.alpha) * self.estRTT) + (self.alpha * sampleRTT)
         self.devRTT = ((1 - self.beta) * self.devRTT) + \
@@ -47,10 +49,10 @@ class Sender:
         self.pDelay = float(pDelay)
         self.maxDelay = int(maxDelay)
         self.seed = int(seed)
-        self.socket = self.open_connection()
+        self.socket = self.open_connection()    # sender's socket
         self.start_time = time.time()           # execution time of the program
         self.timeout = Timeout(self.gamma)      # timeout class
-        self.timer_flag = False
+        self.timer_flag = False                 # to indicate we have timer
         self.send_time = None                   # send time of a packet including retransmission
         self.prev_time = None                   # send time of a packet excluding retransmission to calculate RTT
 
@@ -86,11 +88,11 @@ class Sender:
         self.dup_num = 0 			# use to keep track if we have received 3 dup_acks
         self.contents = []			# contents of a file
         self.order_count = 0        # used to keep track of packet sent for packet reordering
-        self.pld = 0
         
         
-
+        # set seed value for random generator
         random.seed(self.seed)
+        # set socket timeout value
         self.socket.settimeout(0.1)
         
     # 3 ways handshake
@@ -381,16 +383,15 @@ class Sender:
     # pld module
     def pld_send(self, packet, retransmit=False):
         self.pld_seg += 1
+        # if is not retransmit segment, increment the sequence number
         if not retransmit:
             payload = packet.data
             self.seq_no = packet.seq_no + len(payload)
             print("next seq_no is", self.seq_no)
 
-        self.pld += 5
+        
         if  random.random() < self.pDrop:
             # drop packet
-            self.pld -= 4
-            print(self.pld)
             print("dropping packet with seq_num{}".format(packet.seq_no))
             self.dropped_seg += 1
             self.seg_trans += 1
@@ -399,8 +400,6 @@ class Sender:
  
         elif random.random() < self.pDuplicate:
             # duplicate packet
-            self.pld -= 3
-            print(self.pld)
             print("duplicate packet with seq_num{}".format(packet.seq_no))
             if len(self.order_buffer) > 0:
                 self.order_count += 1
@@ -414,8 +413,6 @@ class Sender:
 
         elif random.random() < self.pCorrupt:
             # corrupting packet
-            self.pld -= 2
-            print(self.pld)
             print("corrupting packet with seq_num{}".format(packet.seq_no))
             corrupted = corrupt(packet.data)
             seq_no = packet.seq_no
@@ -429,8 +426,6 @@ class Sender:
 
         elif random.random() < self.pOrder:
             # reordering packet
-            self.pld -= 1
-            print(self.pld)
             # check if we have any reorder packet currently waiting to be sent
             if len(self.order_buffer) != 0:
                 self.send(packet)
@@ -447,7 +442,6 @@ class Sender:
 
         elif random.random() < self.pDelay:
             # delaying packet
-            print(self.pld)
             print("Delaying packet with seq_num {}".format(packet.seq_no))
             self.delayed_seg += 1
             delay_timer = Timer((random.uniform(0, self.maxDelay))/1000, self.delay_send, [packet])
@@ -455,7 +449,6 @@ class Sender:
             return 0
         else: 
             # send packet without any error
-            print("pld calls: ", self.pld)
             print("send packet without pld")
             self.send(packet)
             if not retransmit:
@@ -466,10 +459,11 @@ class Sender:
     
     # send a packet after delay between 0 and maxDelay
     def delay_send(self, packet):
-        if len(self.order_buffer) > 0:
-            self.order_count += 1
-        self.update_log("snd/dely", self.get_packet_type(packet), packet)
-        self.send(packet)
+        if self.established is True:
+            if len(self.order_buffer) > 0:
+                self.order_count += 1
+            self.update_log("snd/dely", self.get_packet_type(packet), packet)
+            self.send(packet)
 
 
     # write stats to log file
@@ -499,7 +493,7 @@ class Sender:
     def close_connection(self):
         while True:
 
-            # end state
+            # once we have received the ack indicating the all data has been received, we send a fin.
             if self.end is True:
                 # create fin packet
                 fin = STPPacket(b'', self.seq_no, self.ack_no, fin=True)
@@ -521,8 +515,11 @@ class Sender:
                 # check if receive ack
                 if self.receive_ack(ack):
                     # update log
+                    if (ack.ack_no == (self.seq_no-1)):
+                        self.update_log("rcv/DA", self.get_packet_type(ack), ack)
+                        self.dup_acks += 1
+                        continue
                     self.update_log("rcv", self.get_packet_type(ack), ack)
-
                     # update state
                     self.fin_wait = False
                     self.fin_wait_2 = True
