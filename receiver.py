@@ -165,7 +165,6 @@ class Receiver:
 
 			# check if packet receive is not empty
 			if packet is not None : 
-				print("packet is not none")
 
 				# check if received packet is a fin packet
 				if self.receive_fin(packet):
@@ -178,11 +177,9 @@ class Receiver:
 					# receive packet containing payload 
 					
 					payload = packet.data
-					print("receive packet with seq_num", packet.seq_no)
 
 					# check if packet is corrupted
 					if(receiver_checksum(payload) + packet.checksum != 0xFFFF):
-						print("checking packet")
 
 						# update stats
 						data_len = len(packet.data)
@@ -193,12 +190,10 @@ class Receiver:
 
 						# update log file 
 						self.update_log("rcv/corr", self.get_packet_type(packet), packet)
-						print("incorrect checksum, return previous ack")
 						continue
 					
 					# buffer all new accepted packet that is not duplicate - could be out of order
 					if packet.seq_no not in self.buffer.keys() and packet.seq_no >= self.ack_no:
-						print("adding packet to buffer", packet.seq_no)
 						self.buffer[packet.seq_no] = packet
 						self.data_seg_received += 1
 						self.total_seg_received += 1
@@ -207,7 +202,6 @@ class Receiver:
 					if packet.seq_no == self.ack_no:
 						# move window up; everything past this has been acknowledged
 						# in order packet
-						print("in order packet") 
 						# update stats
 						data_len = len(packet.data)
 						self.bytes_received += data_len
@@ -220,7 +214,6 @@ class Receiver:
 						
 						# create ack and send it
 						ack = STPPacket(b'',self.seq_no, self.ack_no, ack=True)
-						print("sending ack")
 						self.send(ack, addr)
 
 						# update log file
@@ -228,7 +221,6 @@ class Receiver:
 						
 					
 					elif packet.seq_no < self.ack_no:
-						print("received dup data segment")
 						# duplicate packet 
 						
 						# update stats
@@ -254,7 +246,6 @@ class Receiver:
 						data_len = len(packet.data)
 						self.bytes_received += data_len
 						self.dup_ack_no = packet.seq_no
-						print("receieved out of order packet")
 
 						#update log file
 						self.update_log("rcv", self.get_packet_type(packet), packet)
@@ -275,7 +266,6 @@ class Receiver:
 						self.dup_data_received += 1
 						self.data_seg_received += 1
 						self.total_seg_received += 1
-						print("receieved duplicate  out of order packet")
 
 						# update log 
 						self.update_log("rcv", self.get_packet_type(packet), packet)
@@ -288,7 +278,7 @@ class Receiver:
 
 	# release out of order packet in buffer and append to received_bytes
 	def update_buffer(self):
-		print("releasing packet in buffer")
+		# releasing in order buffer 
 		while self.ack_no in list(self.buffer.keys()):
 			packet = self.buffer[self.ack_no]
 			data_len = len(packet.data)
@@ -298,13 +288,12 @@ class Receiver:
 		
 	# write received bytes to file
 	def write_file(self):
-		print("writing to file")
+		# writing to file
 		with open(self.file, "wb+") as f: 
 			f.write(self.received_bytes)
 
 	# close connection
 	def close(self, packet, addr):
-		print("closing")
 		self.seq_no = packet.ack_no
 		self.ack_no = packet.seq_no + 1
 		ack = STPPacket('',self.seq_no, self.ack_no, ack=True)
