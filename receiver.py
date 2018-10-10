@@ -289,7 +289,7 @@ class Receiver:
 	# write received bytes to file
 	def write_file(self):
 		# writing to file
-		with open(self.file, "wb+") as f: 
+		with open(self.file, "wb") as f: 
 			f.write(self.received_bytes)
 
 	# close connection
