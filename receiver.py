@@ -43,7 +43,7 @@ class Receiver:
 		while True: 
 			# listen state
 			if self.listen == True:
-				print("\n==== STATE: LISTEN ====")
+				print("==== STATE: LISTEN ====")
 				syn, client_addr = self.receive()
 				# receive syn
 				if self.receive_syn(syn):
@@ -61,7 +61,7 @@ class Receiver:
 
 			# synack sent 
 			if self.syn_rcv == True:
-				print("\n==== STATE: SYNACK SENT =====T")
+				print("==== STATE: SYNACK SENT =====")
 				ack, client_addr = self.receive()
 				# receive ack 
 				if self.receive_ack(ack):
@@ -318,7 +318,7 @@ class Receiver:
 				self.last_ack = True
 
 			elif self.last_ack == True:
-				print("====last ack====")
+				print("==== LAST ACK ====")
 				ack, addr = self.receive()
 
 				# update ack
@@ -330,7 +330,7 @@ class Receiver:
 				# update state
 				self.last_ack = False 
 				self.closed = True
-				print("Connection closed")
+				print("==== CONNECTION CLOSED ====")
 				break
 
 	# close socket, write to file and write stats to log 
@@ -343,7 +343,7 @@ class Receiver:
 
 if __name__ == '__main__':
 	if len(sys.argv) != 3:
-		print("Usage: python receiver.py receiver_port file_r.pdf")
+		print("Usage: python3 receiver.py receiver_port file_r.pdf")
 	else:
 		# grab args, create socket and bind
 		receiver_port, file_r = sys.argv[1:]

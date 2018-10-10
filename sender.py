@@ -97,7 +97,7 @@ class Sender:
         while True:
             if self.closed is True:
                 # closed state
-                print("\n==== STATE: CLOSED ====")
+                print("==== STATE: CLOSED ====")
                 # send syn
                 syn = STPPacket(b'', self.seq_no, self.ack_no,syn=True)
                 self.send(syn)
@@ -109,7 +109,7 @@ class Sender:
 
             elif self.syn_sent is True:
                 # syn sent
-                print("\n====STATE: SYN SENT====")
+                print("====STATE: SYN SENT====")
                 synack = sender.receive()
                 if self.receive_synack(synack):
                     self.ack_no = synack.seq_no + 1
@@ -121,7 +121,7 @@ class Sender:
                     self.update_log("snd", self.get_packet_type(ack) , ack)
                     # 3-way-handshake complete
                     self.established = True
-                    print("==== STP CONNECTION ESTABLISHED ===\n")
+                    print("==== STP CONNECTION ESTABLISHED ===")
                     break
 
     # create socket
@@ -233,7 +233,7 @@ class Sender:
             
             # check if last byte sent - last byte acked < mws and if we still have more to send
             while(self.bytes_sent - self.send_base < self.mws and self.bytes_sent < self.file_size):
-               
+            
                 # if there is more to send
                 if self.bytes_sent < self.file_size:
                     # event: receive data from application layer
@@ -266,7 +266,7 @@ class Sender:
                     self.timer_flag = True
                     self.send_time = time.time()
                     self.prev_time = self.send_time
-                  
+                
                     
 
                 # if we have packet for reordering
@@ -357,7 +357,7 @@ class Sender:
         if len(self.order_buffer) > 0:
             self.order_count += 1
         self.pld_send(packet, retransmit=True)
-       
+    
 
     # pld module
     def pld_send(self, packet, retransmit=False):
@@ -373,7 +373,7 @@ class Sender:
             self.seg_trans += 1
             self.update_log("drop", self.get_packet_type(packet), packet)
             return -1
- 
+
         elif random.random() < self.pDuplicate:
             # duplicate packet
             if len(self.order_buffer) > 0:
@@ -480,7 +480,7 @@ class Sender:
             
             # fin wait state
             elif self.fin_wait is True:
-                print("====fin_wait_1====")
+                print("==== FIN WAIT 1 ====")
                 ack = self.receive()
 
                 # check if receive ack
@@ -499,7 +499,7 @@ class Sender:
 
             # fin wait 2 state
             elif self.fin_wait_2 is True:
-                print("====fin_wait_2====")
+                print("==== FIN WAIT 2 ====")
                 # receive fin
                 fin = self.receive()
                 if self.receive_fin(fin):
@@ -521,14 +521,14 @@ class Sender:
             
             #time wait state
             elif self.time_wait is True:
-                print("====time_wait====")
+                print("==== TIME WAIT ====")
                 # close socket and update log
                 self.close()
 
                 # update state
                 self.time_wait = False
                 self.closed = True
-                print("Connection closed")
+                print("==== CONNECTION CLOSED ====")
                 break
 
 
@@ -536,7 +536,7 @@ if __name__ == '__main__':
 
     # check if user input correct command 
     if len(sys.argv) != 15:
-        print(" python sender.py receiver_host_ip receiver_port file.pdf MWS MSS gamma pDrop pDuplicate pCorrupt pOrder maxOrder pDelay maxDelay seed")
+        print("Usage: python3 sender.py receiver_host_ip receiver_port file.pdf MWS MSS gamma pDrop pDuplicate pCorrupt pOrder maxOrder pDelay maxDelay seed")
     else:
         # clear content in Sender_log.txt
         f = open("Sender_log.txt", "w")
