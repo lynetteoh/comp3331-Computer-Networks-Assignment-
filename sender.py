@@ -55,9 +55,10 @@ class Sender:
         self.timer_flag = False                 # to indicate we have timer
         # self.send_time = None                   # send time of a packet including retransmission
         # self.prev_time = None                   # send time of a packet excluding retransmission to calculate RTT
-        self.send_time ={}
+        self.send_time = {}
         self.timer = None 
-        self.rtt_time = None
+        # self.rtt_time = None
+        self.rtt_time = {}
         self.current_rtt_sequence = 0
         self.retransmit_buffer = {}
 
@@ -224,13 +225,8 @@ class Sender:
         if len(self.order_buffer) > 0:
             self.order_count += 1
         self.timeout_rxt_seg += 1
-        # self.prev_time = -1
-        # self.send_time = time.time()
-        # if((packet.seq_no-1)%self.mws == 0):
-        # if((packet.seq_no-1)%self.mws == 0 or packet.seq_no == self.send_base):
-        if(packet.seq_no  == self.send_base):
-            print("cancel RTT, timeout retransmission for packet.seq_no ", packet.seq_no)
-            self.rtt_time = -1
+        print("cancel RTT for whole window, timeout retransmission for packet.seq_no ", packet.seq_no)
+        self.rtt_time = {}
         self.send_time[packet.seq_no] = time.time()
         self.retransmit_buffer[packet.seq_no] = packet
         self.pld_send(packet, retransmit=True)
@@ -283,18 +279,17 @@ class Sender:
                 else: 
                     break
                     
-                # event: retransmit after timer timeout, send the segment with the smallest seq num
+                # if timer not running, we initialize one 
                 if (self.timer_flag is False):
-                    # if the is the first packet we send, we use the initial timeout, else use new timeout
+                    # if the is the first packet we send, we use the initial timeout
                     if (self.send_base == 1):
                         timeout = self.timeout.initial_timeout()
-                    # else:
-                    #     timeout = self.timeout.timeout
                     self.timer_flag = True
-                    # self.timer = time.time()
-                    # self.send_time = time.time()
-                    # self.prev_time = self.send_time
                 
+                print("current rtt_time ", self.rtt_time)
+                payload = packet.data
+                self.seq_no = packet.seq_no + len(payload)
+
                 # if we have packet for reordering
                 if len(self.order_buffer) > 0 and result != 0:
                     # increment order_count to keep track of send packets for packet reordering
@@ -344,15 +339,13 @@ class Sender:
                             break
                         
                         # calculate SampleRTT
-                        # if self.prev_time != -1:
-                        if self.rtt_time != -1 and received_ack > self.current_rtt_sequence:
-                            print("self.rtt_time is {} for {}".format(self.rtt_time, self.current_rtt_sequence))
+                        if (self.send_base-self.mss) in self.rtt_time.keys():
+                            print("self.rtt_time is {} for {}".format(self.rtt_time[self.send_base-self.mss], self.send_base-self.mss))
                             print("self.recv_time " , recv_time)
-                            # sampleRTT = (recv_time - self.prev_time) * 1000
-                            sampleRTT = recv_time - self.rtt_time
+                            sampleRTT = recv_time - self.rtt_time[self.send_base-self.mss]
                             print("sampleRTT is ", sampleRTT)
                             timeout = self.timeout.calc_timeout(sampleRTT)
-                            self.rtt_time = -1
+                            del(self.rtt_time[self.send_base-self.mss])
                         else: 
                             timeout = self.timeout.timeout
                         print("setting timer with timeout ", timeout)                   
@@ -360,11 +353,11 @@ class Sender:
                         if len(self.packet_buffer) > 0:
                             #new timer 
                             self.timer_flag = True
-                            self.rtt_time = self.send_time[self.send_base]
-                            self.current_rtt_sequence = self.send_base
-                            # self.send_time = time.time()
-                            # self.prev_time = self.send_time
-                            # self.timer = time.time()
+
+                            #find the next packet we are going to send
+                            self.current_rtt_sequence = self.seq_no
+                            print("current_rtt_sequence ", self.current_rtt_sequence)
+
                         self.dup_num = 0
                         # continue
                     else:
@@ -385,8 +378,8 @@ class Sender:
                         # continue
                     continue                
             except socket.timeout:
-                if self.timeout.timeout < 1:
-                    self.timeout.timeout = 1
+                if self.timeout.timeout < 0.2:
+                    self.timeout.timeout = 0.2
                 if self.timeout.timeout > 60:
                     self.timeout.timeout = 60
                 print("current timeout ", self.timeout.timeout)
@@ -395,21 +388,12 @@ class Sender:
                     packet = self.packet_buffer[self.send_base]
                     self.retransmission(packet)
                 continue
-
-                # if ((time.time() - self.send_time) >= self.timeout.timeout):
-                #     packet = self.packet_buffer[self.send_base]
-                #     self.retransmission(packet)
-                # continue
                 
     # fast retransmission after receiving 3 dup acks    
     def fast_retransmit(self, packet):
         self.fast_rxt_seg += 1
-        # self.send_time = time.time()
-        # self.prev_time = -1
-        # if((packet.seq_no-1) % self.mws == 0 or packet.seq_no == self.send_base):
-        # if((packet.seq_no-1) % self.mws == 0):
-        if(packet.seq_no  == self.send_base):
-            self.rtt_time = -1
+        print("retransmission, disregard whole window for RTT")
+        self.rtt_time = {}
         self.send_time[packet.seq_no] = time.time()
         self.retransmit_buffer[packet.seq_no] = packet
         if len(self.order_buffer) > 0:
@@ -421,16 +405,10 @@ class Sender:
     def pld_send(self, packet, retransmit=False):
         self.pld_seg += 1
         # if is not retransmit segment, increment the sequence number
-        if not retransmit:
-            payload = packet.data
+        if not retransmit:  
             self.send_time[self.seq_no] =  time.time()
-            # if((packet.seq_no-1) % self.mws == 0):
-            if(packet.seq_no  == self.send_base):
-                print("in pld, packet.seq_no ", packet.seq_no)
-                self.rtt_time = time.time()
-                self.current_rtt_sequence = packet.seq_no
-            self.seq_no = packet.seq_no + len(payload)
-            print("next seq_no is", self.seq_no)
+            self.rtt_time[self.seq_no] = time.time()
+            print("adding packet {} to rtt_time".format(self.seq_no))
             
         
         if  random.random() < self.pDrop:
