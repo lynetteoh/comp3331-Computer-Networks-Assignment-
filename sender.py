@@ -222,7 +222,8 @@ class Sender:
             self.order_count += 1
         self.timeout_rxt_seg += 1
         print("cancel RTT for whole window, timeout retransmission for packet.seq_no ", packet.seq_no)
-        self.rtt_time = {}
+        self.rtt_time.clear()
+        print("clear rtt_time", self.rtt_time)
         self.send_time[packet.seq_no] = time.time()
         self.retransmit_buffer[packet.seq_no] = packet
         self.pld_send(packet, retransmit=True)
@@ -389,7 +390,8 @@ class Sender:
     def fast_retransmit(self, packet):
         self.fast_rxt_seg += 1
         print("retransmission, disregard whole window for RTT")
-        self.rtt_time = {}
+        self.rtt_time.clear()
+        print("clear rtt_time", self.rtt_time)
         self.send_time[packet.seq_no] = time.time()
         self.retransmit_buffer[packet.seq_no] = packet
         if len(self.order_buffer) > 0:
