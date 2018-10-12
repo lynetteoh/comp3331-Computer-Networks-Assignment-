@@ -85283,15 +85283,3 @@ rcv	562.0111589431763	A	1	0	1605587
 rcv	562.0113739967346	F	1	0	1605587
 snd	562.0118010044098	A	1605587	0	2
 =======================================================================
-Size of the file (in Bytes)	1605585
-Segments transmitted (including drop & RXT)	46546
-Number of Segments handled by PLD	46542
-Number of Segments dropped	4340
-Number of Segments Corrupted	3467
-Number of Segments Re-ordered	2139
-Number of Segments Duplicated	3860
-Number of Segments Delayed	0
-Number of Retransmissions due to TIMEOUT	3054
-Number of FAST RETRANSMISSION	7516
-Number of DUP ACKS received	29532
-=======================================================================

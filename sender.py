@@ -99,7 +99,7 @@ class Sender:
         while True:
             if self.closed is True:
                 # closed state
-                print("\n==== STATE: CLOSED ====")
+                print("==== STATE: CLOSED ====")
                 # send syn
                 syn = STPPacket(b'', self.seq_no, self.ack_no,syn=True)
                 self.send(syn)
@@ -111,7 +111,7 @@ class Sender:
 
             elif self.syn_sent is True:
                 # syn sent
-                print("\n====STATE: SYN SENT====")
+                print("==== STATE: SYN SENT ====")
                 synack = sender.receive()
                 if self.receive_synack(synack):
                     self.ack_no = synack.seq_no + 1
@@ -123,7 +123,7 @@ class Sender:
                     self.update_log("snd", self.get_packet_type(ack) , ack)
                     # 3-way-handshake complete
                     self.established = True
-                    print("==== STP CONNECTION ESTABLISHED ===\n")
+                    print("==== STP CONNECTION ESTABLISHED ====")
                     break
 
     # create socket
@@ -494,7 +494,7 @@ class Sender:
             
             # fin wait state
             elif self.fin_wait is True:
-                print("====fin_wait_1====")
+                print("==== FIN WAIT 1====")
                 ack = self.receive()
 
                 # check if receive ack
@@ -511,7 +511,7 @@ class Sender:
 
             # fin wait 2 state
             elif self.fin_wait_2 is True:
-                print("====fin_wait_2====")
+                print("==== FIN WAIT 2 ====")
                 # receive fin
                 fin = self.receive()
                 if self.receive_fin(fin):
@@ -533,7 +533,7 @@ class Sender:
             
             #time wait state
             elif self.time_wait is True:
-                print("====time_wait====")
+                print("==== TIME WAIT ====")
                 # close socket and update log
                 self.close()
 

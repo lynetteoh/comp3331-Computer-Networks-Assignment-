@@ -41,7 +41,7 @@ class Receiver:
 		while True: 
 			# listen state
 			if self.listen == True:
-				print("\n==== STATE: LISTEN ====")
+				print("==== STATE: LISTEN ====")
 				syn, client_addr = self.receive()
 				# receive syn
 				if self.receive_syn(syn):
@@ -59,7 +59,7 @@ class Receiver:
 
 			# synack sent 
 			if self.syn_rcv == True:
-				print("\n==== STATE: SYNACK SENT =====T")
+				print("==== STATE: SYNACK SENT =====")
 				ack, client_addr = self.receive()
 				# receive ack 
 				if self.receive_ack(ack):
@@ -316,7 +316,7 @@ class Receiver:
 				self.last_ack = True
 
 			elif self.last_ack == True:
-				print("====last ack====")
+				print("==== LAST ACK ====")
 				ack, addr = self.receive()
 
 				# update ack

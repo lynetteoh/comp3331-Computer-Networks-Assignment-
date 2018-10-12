@@ -80943,10 +80943,3 @@ snd	564.2511730194092	A	1	0	1605587
 snd	564.2513649463654	F	1	0	1605587
 rcv	564.2519578933716	A	1605587	0	2
 =======================================================================
-Amount of data received (bytes)	2110085
-Total Segments Received	42206
-Data segments received	42202
-Data segments with Bit Errors	3467
-Duplicate data segments received	6623
-Duplicate ACKs sent	29532
-=======================================================================
