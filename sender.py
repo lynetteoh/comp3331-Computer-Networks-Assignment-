@@ -110,11 +110,7 @@ class Sender:
 
             elif self.syn_sent is True:
                 # syn sent
-<<<<<<< HEAD
-                print("====STATE: SYN SENT====")
-=======
                 print("==== STATE: SYN SENT ====")
->>>>>>> remove_comments
                 synack = sender.receive()
                 if self.receive_synack(synack):
                     self.ack_no = synack.seq_no + 1
@@ -126,11 +122,7 @@ class Sender:
                     self.update_log("snd", self.get_packet_type(ack) , ack)
                     # 3-way-handshake complete
                     self.established = True
-<<<<<<< HEAD
-                    print("==== STP CONNECTION ESTABLISHED ===")
-=======
                     print("==== STP CONNECTION ESTABLISHED ====")
->>>>>>> remove_comments
                     break
 
     # create socket
@@ -275,20 +267,10 @@ class Sender:
                     # if the is the first packet we send, we use the initial timeout
                     if (self.send_base == 1):
                         timeout = self.timeout.initial_timeout()
-<<<<<<< HEAD
-                    else:
-                        timeout = self.timeout.timeout
-                    self.timer_flag = True
-                    self.send_time = time.time()
-                    self.prev_time = self.send_time
-                
-                    
-=======
                     self.timer = True
                 
                 payload = packet.data
                 self.seq_no = packet.seq_no + len(payload)
->>>>>>> remove_comments
 
                 # if we have packet for reordering
                 if len(self.order_buffer) > 0 and result != 0:
@@ -513,11 +495,7 @@ class Sender:
             
             # fin wait state
             elif self.fin_wait is True:
-<<<<<<< HEAD
-                print("==== FIN WAIT 1 ====")
-=======
                 print("==== FIN WAIT 1====")
->>>>>>> remove_comments
                 ack = self.receive()
 
                 # check if receive ack
