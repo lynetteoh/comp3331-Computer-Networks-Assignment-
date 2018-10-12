@@ -90,6 +90,8 @@ class Sender:
         
         # set seed value for random generator
         random.seed(self.seed)
+        # set socket timeout 
+        self.socket.settimeout(1)
         
     # 3 ways handshake
     def handshake(self):

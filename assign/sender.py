@@ -90,8 +90,8 @@ class Sender:
         
         # set seed value for random generator
         random.seed(self.seed)
-        # set socket timeout value
-        self.socket.settimeout(0.1)
+        # set socket timeout 
+        self.socket.settimeout(1)
         
     # 3 ways handshake
     def handshake(self):
@@ -223,6 +223,8 @@ class Sender:
 
     # send data
     def send_file(self):
+        # set socket timeout value
+        self.socket.settimeout(0.1)
         self.bytes_sent = 1 # initialise to 1 because send base is always 1 more than the actual bytes sent
         self.send_base += 1
         while True:
