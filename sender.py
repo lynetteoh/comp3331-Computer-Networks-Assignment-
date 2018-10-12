@@ -18,16 +18,16 @@ class Timeout:
 
     # calculate initial timeout value during the start of the program
     def initial_timeout(self):
-        self.timeout = (self.estRTT + (self.gamma * self.devRTT))
+        self.timeout = self.estRTT + (self.gamma * self.devRTT)
         print("timeout in timeout ", self.timeout)
         return self.timeout
 
     # calculate timeout interval
     def calc_timeout(self, sampleRTT):
-        self.estRTT = ((1 - self.alpha) * self.estRTT) + (self.alpha * sampleRTT)
-        self.devRTT = ((1 - self.beta) * self.devRTT) + \
+        self.estRTT = (1 - self.alpha) * self.estRTT + (self.alpha * sampleRTT)
+        self.devRTT = (1 - self.beta) * self.devRTT + \
             (self.beta * abs(sampleRTT - self.estRTT))
-        self.timeout = (self.estRTT + (self.gamma * self.devRTT))
+        self.timeout = self.estRTT + (self.gamma * self.devRTT)
         print("DevRTT" , self.devRTT)
         print("timeout in timeout", self.timeout)
         return self.timeout
@@ -102,7 +102,7 @@ class Sender:
         while True:
             if self.closed is True:
                 # closed state
-                print("\n==== STATE: CLOSED ====")
+                print("==== STATE: CLOSED ====")
                 # send syn
                 syn = STPPacket(b'', self.seq_no, self.ack_no,syn=True)
                 self.send(syn)
@@ -114,7 +114,7 @@ class Sender:
 
             elif self.syn_sent is True:
                 # syn sent
-                print("\n====STATE: SYN SENT====")
+                print("==== STATE: SYN SENT ====")
                 synack = sender.receive()
                 if self.receive_synack(synack):
                     self.ack_no = synack.seq_no + 1
@@ -127,7 +127,7 @@ class Sender:
                     self.update_log("snd", self.get_packet_type(ack) , ack)
                     # 3-way-handshake complete
                     self.established = True
-                    print("==== STP CONNECTION ESTABLISHED ===\n")
+                    print("==== STP CONNECTION ESTABLISHED ====")
                     break
 
     # create socket
@@ -526,14 +526,12 @@ class Sender:
             
             # fin wait state
             elif self.fin_wait is True:
-                print("====fin_wait_1====")
+                print("==== FIN WAIT 1====")
                 ack = self.receive()
                 # check if receive ack
                 if self.receive_ack(ack):
                     # update log
-                    if (ack.ack_no == (self.seq_no-1)):
-                        self.update_log("rcv/DA", self.get_packet_type(ack), ack)
-                        self.dup_acks += 1
+                    if (ack.ack_no != self.seq_no):
                         continue
                     self.update_log("rcv", self.get_packet_type(ack), ack)
                     # update state
@@ -542,7 +540,7 @@ class Sender:
 
             # fin wait 2 state
             elif self.fin_wait_2 is True:
-                print("====fin_wait_2====")
+                print("==== FIN WAIT 2 ====")
                 # receive fin
                 fin = self.receive()
                 if self.receive_fin(fin):
@@ -564,7 +562,7 @@ class Sender:
             
             #time wait state
             elif self.time_wait is True:
-                print("====time_wait====")
+                print("==== TIME WAIT ====")
                 # close socket and update log
                 self.close()
 
