@@ -501,7 +501,7 @@ class Sender:
                 if self.receive_ack(ack):
 
                     # update log
-                    if (ack.ack_no == (self.seq_no-1)):
+                    if ack.ack_no != self.seq_no:
                         continue
                     self.update_log("rcv", self.get_packet_type(ack), ack)
 
