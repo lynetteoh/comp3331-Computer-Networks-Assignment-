@@ -26,7 +26,7 @@ class Timeout:
         self.estRTT = (1 - self.alpha) * self.estRTT + (self.alpha * sampleRTT)
         self.devRTT = (1 - self.beta) * self.devRTT + \
             (self.beta * abs(sampleRTT - self.estRTT))
-        self.timeout = self.estRTT + (self.gamma * self.devRTT
+        self.timeout = self.estRTT + (self.gamma * self.devRTT)
         return self.timeout
 
 
