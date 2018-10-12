@@ -229,7 +229,7 @@ class Sender:
         while True:
             
             # send packet after maxOrder packets have been sent
-            if (self.order_count == self.maxOrder and self.pOrder > 0 and self.bytes_sent - self.send_base <= self.mws):
+            if (self.order_count >= self.maxOrder and self.pOrder > 0 and self.bytes_sent - self.send_base <= self.mws):
                 packet = self.order_buffer.pop()
                 self.order_count = 0
                 self.update_log("snd/rord", self.get_packet_type(packet), packet)
