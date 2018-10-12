@@ -502,8 +502,6 @@ class Sender:
 
                     # update log
                     if (ack.ack_no == (self.seq_no-1)):
-                        self.update_log("rcv/DA", self.get_packet_type(ack), ack)
-                        self.dup_acks += 1
                         continue
                     self.update_log("rcv", self.get_packet_type(ack), ack)
 
