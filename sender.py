@@ -50,9 +50,8 @@ class Sender:
         self.start_time = time.time()           # execution time of the program
         self.timeout = Timeout(self.gamma)      # timeout class
         self.timer = False                      # to indicate we have timer
-        self.send_time = {}
-        self.rtt_time = {}
-        self.current_rtt_sequence = 0
+        self.send_time = {}                     # keep track of send time of a packet including retransmission and drop
+        self.rtt_time = {}                      # keep track of send time of a packet for timeout interval calculation
         self.retransmit_buffer = {}
 
         # states of sender
