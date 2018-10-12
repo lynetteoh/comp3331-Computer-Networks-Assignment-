@@ -18,15 +18,15 @@ class Timeout:
 
     # calculate initial timeout value during the start of the program
     def initial_timeout(self):
-        self.timeout = (self.estRTT + (self.gamma * self.devRTT))
+        self.timeout = self.estRTT + (self.gamma * self.devRTT)
         return self.timeout
 
     # calculate timeout interval
     def calc_timeout(self, sampleRTT):
-        self.estRTT = ((1 - self.alpha) * self.estRTT) + (self.alpha * sampleRTT)
-        self.devRTT = ((1 - self.beta) * self.devRTT) + \
+        self.estRTT = (1 - self.alpha) * self.estRTT + (self.alpha * sampleRTT)
+        self.devRTT = (1 - self.beta) * self.devRTT + \
             (self.beta * abs(sampleRTT - self.estRTT))
-        self.timeout = (self.estRTT + (self.gamma * self.devRTT))
+        self.timeout = self.estRTT + (self.gamma * self.devRTT
         return self.timeout
 
 
