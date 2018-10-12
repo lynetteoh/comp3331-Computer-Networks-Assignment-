@@ -1,5 +1,3 @@
-
-
 from stp_packet import *
 import socket
 import sys
