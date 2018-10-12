@@ -52,12 +52,8 @@ class Sender:
         self.socket = self.open_connection()    # sender's socket
         self.start_time = time.time()           # execution time of the program
         self.timeout = Timeout(self.gamma)      # timeout class
-        self.timer_flag = False                 # to indicate we have timer
-        # self.send_time = None                   # send time of a packet including retransmission
-        # self.prev_time = None                   # send time of a packet excluding retransmission to calculate RTT
+        self.timer = False                      # to indicate we have timer
         self.send_time = {}
-        self.timer = None 
-        # self.rtt_time = None
         self.rtt_time = {}
         self.current_rtt_sequence = 0
         self.retransmit_buffer = {}
@@ -280,11 +276,11 @@ class Sender:
                     break
                     
                 # if timer not running, we initialize one 
-                if (self.timer_flag is False):
+                if (self.timer is False):
                     # if the is the first packet we send, we use the initial timeout
                     if (self.send_base == 1):
                         timeout = self.timeout.initial_timeout()
-                    self.timer_flag = True
+                    self.timer = True
                 
                 print("current rtt_time ", self.rtt_time)
                 payload = packet.data
@@ -314,8 +310,8 @@ class Sender:
                     if received_ack > self.send_base:
                         print("received ack: {} and the current send base is {}".format(received_ack, self.send_base))
                         # stop timer on previous packet. new send base 
-                        if self.timer_flag is True:
-                            self.timer_flag = False
+                        if self.timer is True:
+                            self.timer = False
                         self.update_log("rcv", self.get_packet_type(ack), ack)
 
                         # ack_num will be 1 more than last acked byte
@@ -335,7 +331,7 @@ class Sender:
                             print("received all data")
                             self.established = False
                             self.end = True 
-                            self.timer_flag = False
+                            self.timer = False
                             break
                         
                         # calculate SampleRTT
@@ -352,7 +348,7 @@ class Sender:
                         #if there are still not yet acked packets, start new timer.
                         if len(self.packet_buffer) > 0:
                             #new timer 
-                            self.timer_flag = True
+                            self.timer = True
 
                             #find the next packet we are going to send
                             self.current_rtt_sequence = self.seq_no
